@@ -76,7 +76,7 @@ class UserViewSet(APITestCase):
             response = self.client.get(self.url)
             self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.data)
 
-        all_users = User.objects.only('id', 'inn', 'first_name', 'last_name', 'username').order_by('-id')
+        all_users = User.objects.only('id', 'inn', 'first_name', 'last_name', 'username', 'bill').order_by('-id')
         self.assertEqual(all_users.count(), response.data.get('count'))
 
         self.assertListEqual(UserSerializer(instance=all_users, many=True).data, response.data.get('results'))
