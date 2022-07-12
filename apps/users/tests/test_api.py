@@ -111,7 +111,6 @@ class UserViewSet(APITestCase):
         ({'amount': 16, 'list_of_inn': LIST_OF_INN + (USER_INN, )}, 16, Decimal('1.00'), Decimal('1.00')),
         ({'amount': 15, 'list_of_inn': LIST_OF_INN + (USER_INN,)}, 16, Decimal('2.05'), Decimal('0.93')),
         ({'amount': 0.15}, 2.15, Decimal('2.00'), Decimal('0.01')),
-        ({'amount': 0.15}, 2.15, Decimal('2.00'), Decimal('0.01')),
         ({'amount': 1000000000}, 1000000000, Decimal('0.1'), Decimal('66666666.66')),
     ])
     def test_transfer_money(self, data_to_transfer: dict, user_bill: float,

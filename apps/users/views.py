@@ -1,14 +1,9 @@
-from decimal import Decimal
-
-from django.db import transaction
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema_view, extend_schema, inline_serializer
 from rest_framework.decorators import action
-from rest_framework.exceptions import ParseError
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from utils.decimal import round_decimal
 from apps.users.permissions import UserViewSetPermission
 from apps.users.serializers import serializers, UserSerializer, MoneyTransferSerializer
 
@@ -39,28 +34,17 @@ class UserViewSet(ReadOnlyModelViewSet):
 
     @action(detail=True, methods=['POST'])
     def money_transfer(self, request, *args, **kwargs):
-
         user = self.get_object()
 
-        serializer = MoneyTransferSerializer(data=request.data)
+        serializer = MoneyTransferSerializer(
+            data=request.data,
+            context={'user': request.user},
+        )
         serializer.is_valid(raise_exception=True)
-        list_of_inn, amount = serializer.validated_data.values()
 
-        if user.bill < amount:
-            raise ParseError('Users bill does not have enough money')
-
-        amount_per_user = round_decimal(amount / len(list_of_inn))
-
-        if amount_per_user < Decimal('0.01'):
-            raise ParseError('Amount too small to be split')
-
-        with transaction.atomic():
-            user.bill = round_decimal(user.bill - amount_per_user * len(list_of_inn))
-            user.save()
-
-            users_to_replenish = User.objects.only('id', 'bill').filter(inn__in=list_of_inn)
-            for user_to_replenish in users_to_replenish:
-                user_to_replenish.bill = round_decimal(user_to_replenish.bill + amount_per_user)
-            User.objects.bulk_update(users_to_replenish, ['bill'], batch_size=100)
+        user.transfer_money(
+            serializer.validated_data['list_of_inn'],
+            serializer.validated_data['amount'],
+        )
 
         return Response({'message': 'All done'})
